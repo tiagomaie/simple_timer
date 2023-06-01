@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <style>
+    :root {
+      --primary-color: #333;
+      --secondary-color: #f4f4f4;
+      --accent-color: #444;
+      --border-radius: 5px;
+      --button-width: 100%;
+      --button-max-width: 300px;
+      --countdown-height: 150px;
+      --countdown-width: 300px;
+      --countdown-border-radius: 10px;
+    }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: var(--secondary-color);
+      color: #333;
+      text-align: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    input {
+      font-size: 1.5em;
+      margin: 1em;
+      padding: 0.5em;
+      border: none;
+      outline: none;
+      border-radius: var(--border-radius);
+      width: var(--button-width);
+      max-width: var(--button-max-width);
+      text-align: center;
+      background-color: var(--secondary-color);
+    }
+
+    button {
+      font-size: 1.5em;
+      margin: 1em;
+      padding: 0.5em;
+      border: none;
+      outline: none;
+      border-radius: var(--border-radius);
+      width: var(--button-width);
+      max-width: var(--button-max-width);
+      background-color: var(--primary-color);
+      color: #fefefe;
+    }
+
+    button:hover {
+      background-color: var(--accent-color);
+      cursor: pointer;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: var(--button-width);
+      max-width: var(--button-max-width);
+    }
+
+    .countdown-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: var(--countdown-height);
+      width: var(--countdown-width);
+      border-radius: var(--countdown-border-radius);
+      background-color: var(--secondary-color);
+      margin: 1em;
+    }
+
+    .countdown-container p {
+      font-size: 4em;
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <input id="time" type="text" placeholder="Enter time (mm:ss)" pattern="^([0-5]?[0-9]):([0-5]?[0-9])$" />
+    <div class="button-group">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseResumeTimer()" style="display:none">Pause</button>
+    </div>
+    <div class="countdown-container" style="display:none">
+      <p id="countdown"></p>
+    </div>
+    <audio src="https://www.freesoundslibrary.com/wp-content/uploads/2017/10/Old-clock-ringing-sound-effect.mp3">
+    </audio>
+  </div>
+  <audio></audio>
+  <script type="text/javascript">
+    const soundUrl = "https://www.freesoundslibrary.com/wp-content/uploads/2017/10/Old-clock-ringing-sound-effect.mp3";
+    const countdownEl = document.getElementById('countdown');
+    const timeInput = document.getElementById('time');
+    const startButton = document.querySelector('button:first-of-type');
+    const pauseResumeButton = document.querySelector('button:last-of-type');
+    const alarmSound = document.querySelector('audio');
+    const countdownContainer = document.querySelector('.countdown-container');
+
+    let time;
+    let intervalId;
+    let isPaused = false;
+
+    function startTimer() {
+      const startingTime = timeInput.value.split(":");
+      const startingMinutes = parseInt(startingTime[0]) || 0;
+      const startingSeconds = parseInt(startingTime[1]) || 0;
+      time = startingMinutes * 60 + startingSeconds;
+      startButton.style.display = "none";
+      pauseResumeButton.style.display = "block";
+      timeInput.style.display = "none";
+      countdownContainer.style.display = "flex";
+      clearInterval(intervalId);
+      intervalId = setInterval(updateCountdown, 1000);
+    }
+
+    function pauseResumeTimer() {
+      isPaused = !isPaused;
+      pauseResumeButton.innerHTML = isPaused ? "Resume" : "Pause";
+    }
+
+    function updateCountdown() {
+      if (!isPaused) {
+        const minutes = Math.floor(time / 60);
+        let seconds = time % 60;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        countdownEl.innerHTML = minutes + ":" + seconds;
+        time--;
+        if (time < 0) {
+          clearInterval(intervalId);
+          countdownEl.innerHTML = "Time's up!";
+          alarmSound.play();
+          pauseResumeButton.innerHTML = "Reset";
+          pauseResumeButton.addEventListener("click", resetTimer);
+        }
+      }
+    }
+
+    async function getAudFromUrl(url) {
+      let response = await fetch(url);
+      data = await response.blob();
+      let audio = new Audio();
+      audio.src = URL.createObjectURL(data);
+      return audio;
+    }
+
+    document.addEventListener("DOMContentLoaded", async function() {
+      let au = await getAudFromUrl(soundUrl);
+      let el = document.querySelector("audio");
+      el.src = au.src;
+      el.addEventListener('ended', function() {
+        pauseResumeButton.innerHTML = "Reset";
+        pauseResumeButton.addEventListener("click", resetTimer);
+      });
+    })
+
+    function resetTimer() {
+      time = 0;
+      isPaused = false;
+      clearInterval(intervalId);
+      countdownEl.innerHTML = "";
+      countdownContainer.style.display = "none";
+      timeInput.style.display = "block";
+      startButton.style.display = "block";
+      pauseResumeButton.style.display = "none";
+      pauseResumeButton.removeEventListener("click", resetTimer);
+      alarmSound.pause();
+    }
+  </script>
+</body>
+
+</html>
